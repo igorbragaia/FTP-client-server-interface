@@ -23,6 +23,7 @@ class FTPClient:
         if self.tcp is not None:
             self.tcp.close()
             self.tcp = None
+            print('LOGGED OUT')
             self.status = 'NOT CONNECTED'
 
     def run(self):
@@ -61,7 +62,6 @@ class FTPClient:
                 if re.search('^close$', msg):
                     self.close()
                 elif re.search('^quit$', msg):
-                    self.close()
                     self.close()
                     sys.exit()
                 elif re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):

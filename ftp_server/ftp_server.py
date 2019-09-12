@@ -74,7 +74,7 @@ class FTPServer:
                         con.send(self.payload(path, base_path, data=content_str))
                     # $ pwd
                     elif re.search("^pwd$".format(pathRegex), msg):
-                        dirname = re.split('pwd ', msg)[1]
+                        con.send(self.payload(path, base_path, data=os.path.relpath(path, base_path) ))
                     # *************************
                     # MANIPULACAO DE DIRETORIOS
                     # *************************
