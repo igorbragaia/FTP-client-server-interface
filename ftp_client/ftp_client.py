@@ -11,8 +11,9 @@ class FTPClient:
 
     def connect(self, host: str, port: int):
         try:
-            self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcp.connect((host, port))
+            tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp.connect((host, port))
+            self.tcp = tcp
             self.status = 'CONNECTED'
             return [True, None]
         except Exception as e:
@@ -21,6 +22,7 @@ class FTPClient:
     def close(self):
         if self.tcp is not None:
             self.tcp.close()
+            self.tcp = None
             self.status = 'NOT CONNECTED'
 
     def run(self):
