@@ -71,63 +71,64 @@ class FTPServer:
         self.estado = 'NOT AUTHENTICATED'
 
     def run(self):
-        con, cliente = self.tcp.accept()
-        print('Conectado por', cliente)
-        con.send('ENTER YOUR AUTH CODE'.encode())
         while True:
-            msg = con.recv(1024).decode('ascii')
-            if not msg:
-                break
+            con, cliente = self.tcp.accept()
+            print('Conectado por', cliente)
+            con.send('ENTER YOUR AUTH CODE'.encode())
+            while True:
+                msg = con.recv(1024).decode('ascii')
+                if not msg:
+                    break
 
-            print(cliente, msg)
-            if self.estado == 'NOT AUTHENTICATED':
-                if msg == 'codigo':
-                    self.estado = 'AUTHENTICATED'
-                    con.send('LOGGED IN'.encode())
-                else:
-                    con.send('PERMISSION DENIED'.encode())
-            elif self.estado == 'AUTHENTICATED':
-                # **********************************
-                # NAVEGACAO E LISTAGEM DE DIRETORIOS
-                # **********************************
-                # $ cd <dirname>
-                if re.search("^cd {0}$".format(pathRegex), msg):
-                    path = re.split('cd ', msg)[1]
-                # $ ls <dirname>
-                elif re.search("^ls {0}$".format(pathRegex), msg):
-                    path = re.split('ls ', msg)[1]
-                # $ ls
-                elif re.search("^ls$".format(pathRegex), msg):
-                    pass
-                # $ pwd
-                elif re.search("^pwd$".format(pathRegex), msg):
-                    path = re.split('pwd ', msg)[1]
-                # **********************************
-                # MANIPULACAO DE DIRETORIOS
-                # **********************************
-                # $ mkdir <dirname>
-                elif re.search("^mkdir {0}$".format(pathRegex), msg):
-                    path = re.split('mkdir ', msg)[1]
-                # rmdir <dirname>
-                elif re.search("^rmdir {0}$".format(pathRegex), msg):
-                    path = re.split('rmdir ', msg)[1]
-                # **********************************
-                # MANIPULACAO DE ARQUIVOS
-                # **********************************
-                # get <dirname>
-                elif re.search("^get {0}$".format(pathRegex), msg):
-                    path = re.split('get ', msg)[1]
-                # put <dirname>
-                elif re.search("^put {0}$".format(pathRegex), msg):
-                    path = re.split('put ', msg)[1]
-                # delete <dirname>
-                elif re.search("^delete {0}$".format(pathRegex), msg):
-                    path = re.split('delete ', msg)[1]
+                print(cliente, msg)
+                if self.estado == 'NOT AUTHENTICATED':
+                    if msg == 'codigo':
+                        self.estado = 'AUTHENTICATED'
+                        con.send('LOGGED IN'.encode())
+                    else:
+                        con.send('PERMISSION DENIED'.encode())
+                elif self.estado == 'AUTHENTICATED':
+                    # **********************************
+                    # NAVEGACAO E LISTAGEM DE DIRETORIOS
+                    # **********************************
+                    # $ cd <dirname>
+                    if re.search("^cd {0}$".format(pathRegex), msg):
+                        path = re.split('cd ', msg)[1]
+                    # $ ls <dirname>
+                    elif re.search("^ls {0}$".format(pathRegex), msg):
+                        path = re.split('ls ', msg)[1]
+                    # $ ls
+                    elif re.search("^ls$".format(pathRegex), msg):
+                        pass
+                    # $ pwd
+                    elif re.search("^pwd$".format(pathRegex), msg):
+                        path = re.split('pwd ', msg)[1]
+                    # **********************************
+                    # MANIPULACAO DE DIRETORIOS
+                    # **********************************
+                    # $ mkdir <dirname>
+                    elif re.search("^mkdir {0}$".format(pathRegex), msg):
+                        path = re.split('mkdir ', msg)[1]
+                    # rmdir <dirname>
+                    elif re.search("^rmdir {0}$".format(pathRegex), msg):
+                        path = re.split('rmdir ', msg)[1]
+                    # **********************************
+                    # MANIPULACAO DE ARQUIVOS
+                    # **********************************
+                    # get <dirname>
+                    elif re.search("^get {0}$".format(pathRegex), msg):
+                        path = re.split('get ', msg)[1]
+                    # put <dirname>
+                    elif re.search("^put {0}$".format(pathRegex), msg):
+                        path = re.split('put ', msg)[1]
+                    # delete <dirname>
+                    elif re.search("^delete {0}$".format(pathRegex), msg):
+                        path = re.split('delete ', msg)[1]
 
-                con.send('COMMAND PROCESSED'.encode())
+                    con.send('COMMAND PROCESSED'.encode())
 
-        print('Finalizando conexao do cliente', cliente)
-        con.close()
+            print('Finalizando conexao do cliente', cliente)
+            con.close()
 
     def __del__(self):
         self.tcp.close()

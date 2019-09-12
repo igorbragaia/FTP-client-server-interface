@@ -1,4 +1,4 @@
 from FTP import FTPClient
 
-server = FTPClient()
-server.run()
+client = FTPClient()
+client.run()
