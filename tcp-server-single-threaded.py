@@ -1,4 +1,4 @@
-from FTP import FTPServer
+from ftp import FTPServer
 
 server = FTPServer()
 server.run()
