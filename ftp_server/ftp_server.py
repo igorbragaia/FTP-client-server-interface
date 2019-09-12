@@ -51,7 +51,7 @@ class FTPServer:
                         dirname = re.split('cd ', msg)[1]
                         new_path = os.path.realpath(os.path.join(path, dirname))
                         if os.path.exists(new_path) and os.path.isdir(new_path) \
-                                and str.endswith(os.path.relpath(new_path, base_path), '..'):
+                                and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             path = new_path
                             con.send(self.payload(path, base_path))
                         else:
