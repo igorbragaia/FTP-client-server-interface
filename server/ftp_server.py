@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import json
+import shutil
 
 
 pathRegex = "([a-zA-Z0-9/.])*"
@@ -88,10 +89,18 @@ class FTPServer:
                             os.mkdir(dirname)
                             con.send(self.payload(path, base_path))
                         else:
-                            con.send(self.payload(path, base_path, data='cannot create directory: no such file or directory'))
+                            con.send(self.payload(path, base_path,
+                                                  data='cannot create directory: no such file or directory'))
                     # rmdir <dirname>
                     elif re.search("^rmdir {0}$".format(pathRegex), msg):
                         dirname = re.split('rmdir ', msg)[1]
+                        dirname = os.path.realpath(os.path.join(base_path, dirname))
+                        if str.endswith(os.path.relpath(path, dirname), '..') and os.path.isdir(dirname):
+                            shutil.rmtree(dirname)
+                            con.send(self.payload(path, base_path))
+                        else:
+                            con.send(self.payload(path, base_path,
+                                                  data='cannot remove directory: no such file or directory'))
                     # ***********************
                     # MANIPULACAO DE ARQUIVOS
                     # ***********************
