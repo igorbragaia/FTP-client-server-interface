@@ -22,6 +22,6 @@ Manipulação de arquivos
 
 Gerenciamento de conexões
 
-    __close               encerra sessão atual
+    close               encerra sessão atual
     open <server>       conectar ao host server
     quit                encerra sessão atual e cessa execução do cliente

@@ -1,3 +1,4 @@
+from ftp import FTP
 import socket
 import os
 import re
@@ -9,43 +10,44 @@ import shutil
 pathRegex = "([a-zA-Z0-9/.])*"
 
 
-class FTPServer:
+class FTPServer(FTP):
     def __init__(self):
-        self.estado = None
+        super().__init__()
+        self.status = None
         self.tcp = None
 
     def __payload(self, path, basepath, data=None):
         payload = {
-            'path': '~/{0}'.format(os.path.relpath(path, basepath)) if self.estado == 'AUTHENTICATED' else '',
+            'path': '~/{0}'.format(os.path.relpath(path, basepath)) if self.status == 'AUTHENTICATED' else '',
             'data': data
         }
         return json.dumps(payload, ensure_ascii=True).encode('utf8')
 
-    def __connect(self, host='127.0.0.1', port=5000):
+    def connect(self, host='127.0.0.1', port=5000):
         try:
             self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcp.bind((host, port))
             self.tcp.listen(1)
-            self.estado = 'NOT AUTHENTICATED'
+            self.status = 'NOT AUTHENTICATED'
             return [True, None]
         except Exception as e:
             return [False, e]
 
-    def __close(self):
+    def close(self):
         if self.tcp is not None:
             self.tcp.close()
             self.tcp = None
-            self.estado = None
+            self.status = None
             print("server conn closed")
 
     def run(self):
-        self.__connect()
+        self.connect()
         while True:
             con, cliente = self.tcp.accept()
             base_path = os.path.join(os.getcwd(), "files")
             path = os.path.join(os.getcwd(), "files")
             print('Conectado por', cliente)
-            self.estado = 'NOT AUTHENTICATED'
+            self.status = 'NOT AUTHENTICATED'
             con.send(self.__payload(path, base_path, data='ENTER YOUR AUTH CODE'))
             while True:
                 msg = con.recv(1024).decode('ascii')
@@ -53,13 +55,13 @@ class FTPServer:
                     break
 
                 print(cliente, msg)
-                if self.estado == 'NOT AUTHENTICATED':
+                if self.status == 'NOT AUTHENTICATED':
                     if msg == 'codigo':
-                        self.estado = 'AUTHENTICATED'
+                        self.status = 'AUTHENTICATED'
                         con.send(self.__payload(path, base_path, data='LOGGED IN'))
                     else:
                         con.send(self.__payload(path, base_path, data='PERMISSION DENIED\nENTER YOUR AUTH CODE'))
-                elif self.estado == 'AUTHENTICATED':
+                elif self.status == 'AUTHENTICATED':
                     # **********************************
                     # NAVEGACAO E LISTAGEM DE DIRETORIOS
                     # **********************************
@@ -135,7 +137,7 @@ class FTPServer:
             con.close()
 
     def __del__(self):
-        self.__close()
+        self.close()
 
 
 if __name__ == '__main__':

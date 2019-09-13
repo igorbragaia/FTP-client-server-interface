@@ -16,6 +16,6 @@ Manipulação de arquivos
     delete <filename>   remove arquivo remoto filename. Exibir mensagem de erro caso arquivo inexistente
 
 Gerenciamento de conexões
-    __close               encerra sessão atual
+    close               encerra sessão atual
     open <server>       conectar ao host server
     quit                encerra sessão atual e cessa execução do cliente

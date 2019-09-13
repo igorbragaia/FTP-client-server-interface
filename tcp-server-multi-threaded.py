@@ -14,7 +14,7 @@ def conectado(con, cliente):
         print(cliente, msg)
 
     print('Finalizando conexao do cliente', cliente)
-    con.__close()
+    con.close()
     thread.exit()
 
 
@@ -29,4 +29,4 @@ while True:
     con, cliente = tcp.accept()
     thread.start_new_thread(conectado, tuple([con, cliente]))
 
-tcp.__close()
+tcp.close()
