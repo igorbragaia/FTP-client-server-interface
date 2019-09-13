@@ -60,9 +60,8 @@ class FTPServer(FTP):
                     break
 
                 request = decode_message(msg)
-
                 print(cliente, msg)
-                message = self.make_message(path, base_path, self.status, '')
+                message = self.make_message(path, base_path, self.status, 'Command not found')
                 if self.status == 'NOT AUTHENTICATED':
                     if request.data == {'username': 'igor', 'password': 'bragaia'}:
                         self.status = 'AUTHENTICATED'
@@ -75,7 +74,7 @@ class FTPServer(FTP):
                     # **********************************
                     # NAVEGACAO E LISTAGEM DE DIRETORIOS
                     # **********************************
-                    # $ cd <dirname>
+                    # cd <dirname>
                     if request.method == 'cd':
                         dirname = request.data['dirname']
                         new_path = os.path.realpath(os.path.join(path, dirname))
@@ -85,7 +84,7 @@ class FTPServer(FTP):
                             message = self.make_message(path, base_path, self.status, '')
                         else:
                             message = self.make_message(path, base_path, self.status, 'No such file or directory')
-                    # $ ls <dirname>
+                    # ls <dirname>
                     elif request.method == 'ls':
                         dirname = request.data['dirname']
                         new_path = os.path.realpath(os.path.join(path, dirname))
@@ -98,14 +97,14 @@ class FTPServer(FTP):
                         else:
                             message = self.make_message(path, base_path, self.status,
                                                         'No such file or directory')
-                    # $ pwd
+                    # pwd
                     elif request.method == 'pwd':
                         message = self.make_message(path, base_path, self.status,
                                                     os.path.relpath(path, base_path))
                     # *************************
                     # MANIPULACAO DE DIRETORIOS
                     # *************************
-                    # $ mkdir <dirname>
+                    # mkdir <dirname>
                     elif request.method == 'mkdir':
                         dirname = request.data['dirname']
                         dirname = os.path.realpath(os.path.join(base_path, dirname))
@@ -116,7 +115,7 @@ class FTPServer(FTP):
                             message = self.make_message(path, base_path, self.status, '')
                         else:
                             message = self.make_message(path, base_path, self.status,
-                                                        'cannot create directory: no such file or directory')
+                                                        'Cannot create directory: no such file or directory')
                     # rmdir <dirname>
                     elif request.method == 'rmdir':
                         dirname = request.data['dirname']
@@ -126,7 +125,7 @@ class FTPServer(FTP):
                             message = self.make_message(path, base_path, self.status, '')
                         else:
                             message = self.make_message(path, base_path, self.status,
-                                                        'cannot remove directory: no such file or directory')
+                                                        'Cannot remove directory: no such file or directory')
                     # ***********************
                     # MANIPULACAO DE ARQUIVOS
                     # ***********************
