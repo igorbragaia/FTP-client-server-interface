@@ -124,17 +124,17 @@ class FTPClient(FTP):
                     elif command[0] == 'get':
                         if len(command) == 2:
                             request = Message('get', {
-                                'dirname': command[1]
+                                'filename': command[1]
                             })
                     elif command[0] == 'put':
                         if len(command) == 2:
                             request = Message('put', {
-                                'dirname': command[1]
+                                'filename': command[1]
                             })
                     elif command[0] == 'delete':
                         if len(command) == 2:
                             request = Message('delete', {
-                                'dirname': command[1]
+                                'filename': command[1]
                             })
                     elif command[0] == 'close':
                         self.close()
@@ -144,11 +144,14 @@ class FTPClient(FTP):
 
                 if self.tcp:
                     self.tcp.send(encode_message(request))
-                    server_response = decode_message(self.tcp.recv(1024))
+                    encoded_message = self.tcp.recv(4096)
+                    server_response = decode_message(encoded_message)
                     data = server_response.data
                     dirname = data['path']
                     if data['text']:
                         print(data['text'])
+                    if data['file'] != '':
+                        pass
 
     def __del__(self):
         self.close()
