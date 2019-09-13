@@ -10,27 +10,43 @@ pathRegex = "([a-zA-Z0-9/.])*"
 
 
 class FTPServer:
-    def __init__(self, host='127.0.0.1', port=5000):
-        self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp.bind((host, port))
-        self.tcp.listen(1)
-        self.estado = 'NOT AUTHENTICATED'
+    def __init__(self):
+        self.estado = None
+        self.tcp = None
 
-    def payload(self, path, basepath, data=None):
+    def __payload(self, path, basepath, data=None):
         payload = {
             'path': '~/{0}'.format(os.path.relpath(path, basepath)) if self.estado == 'AUTHENTICATED' else '',
             'data': data
         }
         return json.dumps(payload, ensure_ascii=True).encode('utf8')
 
+    def __connect(self, host='127.0.0.1', port=5000):
+        try:
+            self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp.bind((host, port))
+            self.tcp.listen(1)
+            self.estado = 'NOT AUTHENTICATED'
+            return [True, None]
+        except Exception as e:
+            return [False, e]
+
+    def __close(self):
+        if self.tcp is not None:
+            self.tcp.close()
+            self.tcp = None
+            self.estado = None
+            print("server conn closed")
+
     def run(self):
+        self.__connect()
         while True:
             con, cliente = self.tcp.accept()
             base_path = os.path.join(os.getcwd(), "files")
             path = os.path.join(os.getcwd(), "files")
             print('Conectado por', cliente)
             self.estado = 'NOT AUTHENTICATED'
-            con.send(self.payload(path, base_path, data='ENTER YOUR AUTH CODE'))
+            con.send(self.__payload(path, base_path, data='ENTER YOUR AUTH CODE'))
             while True:
                 msg = con.recv(1024).decode('ascii')
                 if not msg:
@@ -40,9 +56,9 @@ class FTPServer:
                 if self.estado == 'NOT AUTHENTICATED':
                     if msg == 'codigo':
                         self.estado = 'AUTHENTICATED'
-                        con.send(self.payload(path, base_path, data='LOGGED IN'))
+                        con.send(self.__payload(path, base_path, data='LOGGED IN'))
                     else:
-                        con.send(self.payload(path, base_path, data='PERMISSION DENIED\nENTER YOUR AUTH CODE'))
+                        con.send(self.__payload(path, base_path, data='PERMISSION DENIED\nENTER YOUR AUTH CODE'))
                 elif self.estado == 'AUTHENTICATED':
                     # **********************************
                     # NAVEGACAO E LISTAGEM DE DIRETORIOS
@@ -54,9 +70,9 @@ class FTPServer:
                         if os.path.exists(new_path) and os.path.isdir(new_path) \
                                 and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             path = new_path
-                            con.send(self.payload(path, base_path))
+                            con.send(self.__payload(path, base_path))
                         else:
-                            con.send(self.payload(path, base_path, data='No such file or directory'))
+                            con.send(self.__payload(path, base_path, data='No such file or directory'))
                     # $ ls <dirname>
                     elif re.search('^ls {0}$'.format(pathRegex), msg):
                         dirname = re.split('ls ', msg)[1]
@@ -65,17 +81,17 @@ class FTPServer:
                                 and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             content = os.listdir(new_path)
                             content_str = "\t".join(content)
-                            con.send(self.payload(path, base_path, data=content_str))
+                            con.send(self.__payload(path, base_path, data=content_str))
                         else:
-                            con.send(self.payload(path, base_path, data='No such file or directory'))
+                            con.send(self.__payload(path, base_path, data='No such file or directory'))
                     # $ ls
                     elif re.search('^ls$'.format(pathRegex), msg):
                         content = os.listdir(path)
                         content_str = "\t".join(content)
-                        con.send(self.payload(path, base_path, data=content_str))
+                        con.send(self.__payload(path, base_path, data=content_str))
                     # $ pwd
                     elif re.search("^pwd$".format(pathRegex), msg):
-                        con.send(self.payload(path, base_path, data=os.path.relpath(path, base_path)))
+                        con.send(self.__payload(path, base_path, data=os.path.relpath(path, base_path)))
                     # *************************
                     # MANIPULACAO DE DIRETORIOS
                     # *************************
@@ -87,20 +103,20 @@ class FTPServer:
                         if not os.path.exists(dirname) and os.path.isdir(previous_dir) \
                             and not str.endswith(os.path.relpath(previous_dir, base_path), '..'):
                             os.mkdir(dirname)
-                            con.send(self.payload(path, base_path))
+                            con.send(self.__payload(path, base_path))
                         else:
-                            con.send(self.payload(path, base_path,
-                                                  data='cannot create directory: no such file or directory'))
+                            con.send(self.__payload(path, base_path,
+                                                    data='cannot create directory: no such file or directory'))
                     # rmdir <dirname>
                     elif re.search("^rmdir {0}$".format(pathRegex), msg):
                         dirname = re.split('rmdir ', msg)[1]
                         dirname = os.path.realpath(os.path.join(base_path, dirname))
                         if str.endswith(os.path.relpath(path, dirname), '..') and os.path.isdir(dirname):
                             shutil.rmtree(dirname)
-                            con.send(self.payload(path, base_path))
+                            con.send(self.__payload(path, base_path))
                         else:
-                            con.send(self.payload(path, base_path,
-                                                  data='cannot remove directory: no such file or directory'))
+                            con.send(self.__payload(path, base_path,
+                                                    data='cannot remove directory: no such file or directory'))
                     # ***********************
                     # MANIPULACAO DE ARQUIVOS
                     # ***********************
@@ -119,8 +135,7 @@ class FTPServer:
             con.close()
 
     def __del__(self):
-        self.tcp.close()
-        print("server conn closed")
+        self.__close()
 
 
 if __name__ == '__main__':

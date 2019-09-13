@@ -9,7 +9,7 @@ class FTPClient:
         self.status = 'NOT CONNECTED'
         self.tcp = None
 
-    def connect(self, host: str, port: int):
+    def __connect(self, host: str, port: int):
         try:
             tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp.connect((host, port))
@@ -19,7 +19,7 @@ class FTPClient:
         except Exception as e:
             return [False, e]
 
-    def close(self):
+    def __close(self):
         if self.tcp is not None:
             self.tcp.close()
             self.tcp = None
@@ -53,7 +53,7 @@ class FTPClient:
                     path = re.split('open ', msg)
                     server = path[1].split(':')[0]
                     port = path[1].split(':')[1]
-                    _, e = self.connect(server, int(port))
+                    _, e = self.__connect(server, int(port))
                     if e:
                         print(e)
                     else:
@@ -77,9 +77,9 @@ class FTPClient:
                     with open('server/help.txt', 'r') as f:
                         print(f.read())
                 elif re.search('^close$', msg):
-                    self.close()
+                    self.__close()
                 elif re.search('^quit$', msg):
-                    self.close()
+                    self.__close()
                     sys.exit()
                 elif re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):
                     print("CLOSE YOUR CURRENT SESSION")
@@ -93,7 +93,7 @@ class FTPClient:
                         print(data)
 
     def __del__(self):
-        self.close()
+        self.__close()
 
 
 if __name__ == '__main__':
