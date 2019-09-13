@@ -46,7 +46,10 @@ class FTPClient:
             begin = False
             if self.status == 'NOT CONNECTED':
                 msg = input('$ ')
-                if re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):
+                if re.search('^help$', msg):
+                    with open('help.txt', 'r') as f:
+                        print(f.read())
+                elif re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):
                     path = re.split('open ', msg)
                     server = path[1].split(':')[0]
                     port = path[1].split(':')[1]
@@ -59,16 +62,21 @@ class FTPClient:
                         data = got_dict['data']
                         if data:
                             print(data)
-                if re.search('^close$', msg):
+                elif re.search('^close$', msg):
                     print('NO OPENED SESSION')
                 elif re.search('^quit$', msg):
                     sys.exit()
+                else:
+                    print('Command {0} not found'.format(msg))
             elif self.status == 'CONNECTED':
                 host = self.tcp.getpeername()[0]
                 port = self.tcp.getpeername()[1]
 
                 msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
-                if re.search('^close$', msg):
+                if re.search('^help$', msg):
+                    with open('ftp_server/help.txt', 'r') as f:
+                        print(f.read())
+                elif re.search('^close$', msg):
                     self.close()
                 elif re.search('^quit$', msg):
                     self.close()
