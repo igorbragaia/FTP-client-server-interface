@@ -61,7 +61,7 @@ class FTPServer:
                         dirname = re.split('ls ', msg)[1]
                         new_path = os.path.realpath(os.path.join(path, dirname))
                         if os.path.exists(new_path) and os.path.isdir(new_path) \
-                                and os.path.relpath(new_path, base_path) != '..':
+                                and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             content = os.listdir(new_path)
                             content_str = "\t".join(content)
                             con.send(self.payload(path, base_path, data=content_str))
@@ -74,13 +74,21 @@ class FTPServer:
                         con.send(self.payload(path, base_path, data=content_str))
                     # $ pwd
                     elif re.search("^pwd$".format(pathRegex), msg):
-                        con.send(self.payload(path, base_path, data=os.path.relpath(path, base_path) ))
+                        con.send(self.payload(path, base_path, data=os.path.relpath(path, base_path)))
                     # *************************
                     # MANIPULACAO DE DIRETORIOS
                     # *************************
                     # $ mkdir <dirname>
                     elif re.search("^mkdir {0}$".format(pathRegex), msg):
                         dirname = re.split('mkdir ', msg)[1]
+                        dirname = os.path.realpath(os.path.join(base_path, dirname))
+                        previous_dir = os.path.realpath(os.path.join(dirname, '..'))
+                        if not os.path.exists(dirname) and os.path.isdir(previous_dir) \
+                            and not str.endswith(os.path.relpath(previous_dir, base_path), '..'):
+                            os.mkdir(dirname)
+                            con.send(self.payload(path, base_path))
+                        else:
+                            con.send(self.payload(path, base_path, data='cannot create directory: no such file or directory'))
                     # rmdir <dirname>
                     elif re.search("^rmdir {0}$".format(pathRegex), msg):
                         dirname = re.split('rmdir ', msg)[1]

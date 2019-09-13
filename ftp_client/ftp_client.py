@@ -27,7 +27,16 @@ class FTPClient:
             self.status = 'NOT CONNECTED'
 
     def run(self):
-        print('Para sair use CTRL+X\n')
+        print('''
+        #***************************************************************************************#
+        # FTP CLIENT                                                                            #
+        # Developed by Igor Bragaia (https://igorbragaia.info) using Python3                    #
+        # Network classes, ITA 2019.2 - Prof. Lourenço Alves Pereira Jr (https://ljr.github.io) #
+        #***************************************************************************************#
+        # For help, run                                                                         #
+        # $ help                                                                                #
+        #***************************************************************************************#
+        ''')
         # **********************************
         # GERENCIAMENTO DE CONEXOES
         # **********************************
