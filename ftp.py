@@ -7,7 +7,7 @@ class FTP(ABC):
         super().__init__()
 
     @abstractmethod
-    def connect(self, host, port):
+    def connect(self, address: str):
         pass
 
     @abstractmethod
@@ -25,9 +25,9 @@ class Message(object):
         self.data = data
 
 
-def encode_object(obj: object) -> str:
-    return json.dumps(obj.__dict__)
+def encode_message(message: Message) -> bytes:
+    return json.dumps(message.__dict__).encode('utf8')
 
 
-def decode_object(encoded_obj: str) -> object:
-    return Message(**json.loads(encoded_obj))
+def decode_message(encoded_message: bytes) -> Message:
+    return Message(**json.loads(encoded_message.decode('utf8')))

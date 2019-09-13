@@ -1,8 +1,9 @@
-from ftp import FTP
+from ftp import FTP, Message, decode_message, encode_message
 import socket
 import re
 import sys
 import json
+import base64
 
 
 class FTPClient(FTP):
@@ -11,15 +12,17 @@ class FTPClient(FTP):
         self.status = 'NOT CONNECTED'
         self.tcp = None
 
-    def connect(self, host: str, port: int):
+    def connect(self, address: str):
         try:
+            host = address.split(':')[0]
+            port = int(address.split(':')[1])
             tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp.connect((host, port))
             self.tcp = tcp
             self.status = 'CONNECTED'
             return [True, None]
         except Exception as e:
-            return [False, e]
+            return [False, 'Connection refused']
 
     def close(self):
         if self.tcp is not None:
@@ -48,51 +51,104 @@ class FTPClient(FTP):
             begin = False
             if self.status == 'NOT CONNECTED':
                 msg = input('$ ')
-                if re.search('^help$', msg):
+                command = [el for el in msg.split(' ') if el != '']
+
+                invalid = False
+                if command[0] == 'help':
                     with open('help.txt', 'r') as f:
                         print(f.read())
-                elif re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):
-                    path = re.split('open ', msg)
-                    server = path[1].split(':')[0]
-                    port = path[1].split(':')[1]
-                    _, e = self.connect(server, int(port))
-                    if e:
-                        print(e)
+                elif command[0] == 'open':
+                    if len(command) == 2:
+                        _, e = self.connect(command[1])
+                        if e:
+                            print(e)
+                        else:
+                            encoded_message = self.tcp.recv(1024)
+                            decoded_message = decode_message(encoded_message)
+
+                            data = decoded_message.data
+                            if data['text']:
+                                print(data['text'])
                     else:
-                        got = self.tcp.recv(1024)
-                        got_dict = json.loads(got.decode('ascii'))
-                        data = got_dict['data']
-                        if data:
-                            print(data)
-                elif re.search('^close$', msg):
+                        invalid = True
+                elif command[0] == 'close':
                     print('NO OPENED SESSION')
-                elif re.search('^quit$', msg):
+                elif command[0] == 'quit':
                     sys.exit()
                 else:
+                    invalid = True
+
+                if invalid:
                     print('Command {0} not found'.format(msg))
             elif self.status == 'CONNECTED':
                 host = self.tcp.getpeername()[0]
                 port = self.tcp.getpeername()[1]
 
-                msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
-                if re.search('^help$', msg):
-                    with open('server/help.txt', 'r') as f:
-                        print(f.read())
-                elif re.search('^close$', msg):
-                    self.close()
-                elif re.search('^quit$', msg):
-                    self.close()
-                    sys.exit()
-                elif re.search('^open ([A-Z]|[a-z]|[0-9]|[.])*:[0-9]*$', msg):
-                    print("CLOSE YOUR CURRENT SESSION")
+                request = Message('undefined', {'data': msg})
+                if dirname == '':
+                    username = input('username: ')
+                    password = input('passowrd: ')
+                    request = Message('login', {'username': username, 'password': password})
                 else:
-                    self.tcp.send(msg.encode())
-                    got = self.tcp.recv(1024)
-                    got_dict = json.loads(got.decode('ascii'))
-                    dirname = got_dict['path']
-                    data = got_dict['data']
-                    if data:
-                        print(data)
+                    msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
+                    command = [el for el in msg.split(' ') if el != '']
+
+                    if command[0] == 'help':
+                        if len(command) == 1:
+                            request = Message('help', {
+                            })
+                    elif command[0] == 'cd':
+                        if len(command) == 2:
+                            request = Message('cd', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'ls':
+                        if len(command) == 1:
+                            request = Message('ls', {
+                                'dirname': ''
+                            })
+                        elif len(command) == 2:
+                            request = Message('ls', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'mkdir':
+                        if len(command) == 2:
+                            request = Message('mkdir', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'rmdir':
+                        if len(command) == 2:
+                            request = Message('rmdir', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'get':
+                        if len(command) == 2:
+                            request = Message('get', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'put':
+                        if len(command) == 2:
+                            request = Message('put', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'delete':
+                        if len(command) == 2:
+                            request = Message('delete', {
+                                'dirname': command[1]
+                            })
+                    elif command[0] == 'close':
+                        self.close()
+                    elif command[0] == 'quit':
+                        self.close()
+                        sys.exit()
+
+                if self.tcp:
+                    self.tcp.send(encode_message(request))
+                    server_response = decode_message(self.tcp.recv(1024))
+                    data = server_response.data
+                    dirname = data['path']
+                    if data['text']:
+                        print(data['text'])
 
     def __del__(self):
         self.close()
