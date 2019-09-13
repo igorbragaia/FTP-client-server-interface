@@ -74,7 +74,7 @@ class FTPClient:
 
                 msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
                 if re.search('^help$', msg):
-                    with open('ftp_server/help.txt', 'r') as f:
+                    with open('server/help.txt', 'r') as f:
                         print(f.read())
                 elif re.search('^close$', msg):
                     self.close()
