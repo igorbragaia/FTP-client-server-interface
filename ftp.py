@@ -31,3 +31,6 @@ def encode_message(message: Message) -> bytes:
 
 def decode_message(encoded_message: bytes) -> Message:
     return Message(**json.loads(encoded_message.decode('utf8')))
+
+
+BYTES_LEN = 1024*1024  # 1MB

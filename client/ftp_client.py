@@ -1,9 +1,10 @@
-from ftp import FTP, Message, decode_message, encode_message
+from ftp import FTP, Message, decode_message, encode_message, BYTES_LEN
 import socket
-import re
 import sys
-import json
 import base64
+import os
+
+base_path = os.getcwd()
 
 
 class FTPClient(FTP):
@@ -20,6 +21,8 @@ class FTPClient(FTP):
             tcp.connect((host, port))
             self.tcp = tcp
             self.status = 'CONNECTED'
+            if not os.path.isdir('files'):
+                os.mkdir('files')
             return [True, None]
         except Exception as e:
             return [False, 'Connection refused']
@@ -63,7 +66,7 @@ class FTPClient(FTP):
                         if e:
                             print(e)
                         else:
-                            encoded_message = self.tcp.recv(1024)
+                            encoded_message = self.tcp.recv(BYTES_LEN)
                             decoded_message = decode_message(encoded_message)
 
                             data = decoded_message.data
@@ -128,9 +131,14 @@ class FTPClient(FTP):
                             })
                     elif command[0] == 'put':
                         if len(command) == 2:
-                            request = Message('put', {
-                                'filename': command[1]
-                            })
+                            filepath = command[1]
+                            if os.path.isfile(filepath):
+                                with open(filepath, 'rb') as file:
+                                    encoded_file = base64.b64encode(file.read())
+                                    request = Message('put', {
+                                        'filename': filepath.split('/')[-1],
+                                        'file': encoded_file
+                                    })
                     elif command[0] == 'delete':
                         if len(command) == 2:
                             request = Message('delete', {
@@ -144,14 +152,16 @@ class FTPClient(FTP):
 
                 if self.tcp:
                     self.tcp.send(encode_message(request))
-                    encoded_message = self.tcp.recv(4096)
+                    encoded_message = self.tcp.recv(BYTES_LEN)
                     server_response = decode_message(encoded_message)
                     data = server_response.data
                     dirname = data['path']
                     if data['text']:
                         print(data['text'])
                     if data['file'] != '':
-                        pass
+                        if request.method == 'get':
+                            with open(os.path.join('files', data['filename']), "wb") as f:
+                                f.write(base64.b64decode(data['file']))
 
     def __del__(self):
         self.close()

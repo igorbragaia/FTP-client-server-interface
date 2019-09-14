@@ -1,4 +1,4 @@
-from ftp import FTP, Message, decode_message, encode_message
+from ftp import FTP, Message, decode_message, encode_message, BYTES_LEN
 import socket
 import os
 import re
@@ -17,11 +17,12 @@ class FTPServer(FTP):
         self.tcp = None
 
     @staticmethod
-    def make_message(path: str, base_path: str, auth: str, text: str, file: str):
+    def make_message(path: str, base_path: str, auth: str, text='', file='', filename=''):
         return Message('response', {
             'path': '~/{0}'.format(os.path.relpath(path, base_path)) if auth == 'AUTHENTICATED' else '',
             'text': text,
-            'file': file
+            'file': file,
+            'filename': filename
         })
 
     def connect(self, address='127.0.0.1:5000'):
@@ -53,24 +54,23 @@ class FTPServer(FTP):
             print('Conectado por', cliente)
             self.status = 'NOT AUTHENTICATED'
 
-            message = self.make_message(path, base_path, self.status, 'ENTER YOUR AUTH CODE', '')
+            message = self.make_message(path, base_path, self.status, text='ENTER YOUR AUTH CODE')
             con.send(encode_message(message))
             while True:
-                msg = con.recv(4096)
+                msg = con.recv(BYTES_LEN)
                 if not msg:
                     break
 
                 request = decode_message(msg)
                 print(cliente, msg)
-                message = self.make_message(path, base_path, self.status, 'Command not found', '')
+                message = self.make_message(path, base_path, self.status, text='Command not found')
                 if self.status == 'NOT AUTHENTICATED':
                     if request.data == {'username': 'igor', 'password': 'bragaia'}:
                         self.status = 'AUTHENTICATED'
-                        message = self.make_message(path, base_path, self.status,
-                                                    'LOGGED IN', '')
+                        message = self.make_message(path, base_path, self.status, text='LOGGED IN')
                     else:
                         message = self.make_message(path, base_path, self.status,
-                                                    'PERMISSION DENIED\nENTER YOUR AUTH CODE', '')
+                                                    text='PERMISSION DENIED\nENTER YOUR AUTH CODE')
                 elif self.status == 'AUTHENTICATED':
                     # **********************************
                     # NAVEGACAO E LISTAGEM DE DIRETORIOS
@@ -82,9 +82,9 @@ class FTPServer(FTP):
                         if os.path.exists(new_path) and os.path.isdir(new_path) \
                                 and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             path = new_path
-                            message = self.make_message(path, base_path, self.status, '', '')
+                            message = self.make_message(path, base_path, self.status)
                         else:
-                            message = self.make_message(path, base_path, self.status, 'No such file or directory', '')
+                            message = self.make_message(path, base_path, self.status, text='No such file or directory')
                     # ls <dirname>
                     elif request.method == 'ls':
                         dirname = request.data['dirname']
@@ -93,15 +93,12 @@ class FTPServer(FTP):
                                 and not str.endswith(os.path.relpath(new_path, base_path), '..'):
                             content = os.listdir(new_path)
                             content_str = '\t'.join(content)
-                            message = self.make_message(path, base_path, self.status,
-                                                        content_str, '')
+                            message = self.make_message(path, base_path, self.status, text=content_str)
                         else:
-                            message = self.make_message(path, base_path, self.status,
-                                                        'No such file or directory', '')
+                            message = self.make_message(path, base_path, self.status, text='No such file or directory')
                     # pwd
                     elif request.method == 'pwd':
-                        message = self.make_message(path, base_path, self.status,
-                                                    os.path.relpath(path, base_path), '')
+                        message = self.make_message(path, base_path, self.status, text=os.path.relpath(path, base_path))
                     # *************************
                     # MANIPULACAO DE DIRETORIOS
                     # *************************
@@ -113,20 +110,20 @@ class FTPServer(FTP):
                         if not os.path.exists(dirname) and os.path.isdir(previous_dir) \
                             and not str.endswith(os.path.relpath(previous_dir, base_path), '..'):
                             os.mkdir(dirname)
-                            message = self.make_message(path, base_path, self.status, '', '')
+                            message = self.make_message(path, base_path, self.status)
                         else:
                             message = self.make_message(path, base_path, self.status,
-                                                        'Cannot create directory: no such file or directory', '')
+                                                        text='Cannot create directory: no such file or directory')
                     # rmdir <dirname>
                     elif request.method == 'rmdir':
                         dirname = request.data['dirname']
                         dirname = os.path.realpath(os.path.join(base_path, dirname))
                         if str.endswith(os.path.relpath(path, dirname), '..') and os.path.isdir(dirname):
                             shutil.rmtree(dirname)
-                            message = self.make_message(path, base_path, self.status, '', '')
+                            message = self.make_message(path, base_path, self.status)
                         else:
                             message = self.make_message(path, base_path, self.status,
-                                                        'Cannot remove directory: no such file or directory', '')
+                                                        text='Cannot remove directory: no such file or directory')
                     # ***********************
                     # MANIPULACAO DE ARQUIVOS
                     # ***********************
@@ -137,10 +134,13 @@ class FTPServer(FTP):
                         if os.path.isfile(filename):
                             with open(filename_relpath, 'rb') as file:
                                 encoded_file = base64.b64encode(file.read())
-                                message = self.make_message(path, base_path, self.status, '', encoded_file)
+                                message = self.make_message(path, base_path, self.status, file=encoded_file,
+                                                            filename=request.data['filename'].split('/')[-1])
                     # put <dirname>
                     elif request.method == 'put':
-                        dirname = request.data['dirname']
+                        with open(os.path.join(path, request.data['filename']), "wb") as f:
+                            f.write(base64.b64decode(request.data['file']))
+                            message = self.make_message(path, base_path, self.status, text='')
                     # delete <dirname>
                     elif request.method == 'delete':
                         dirname = request.data['dirname']
