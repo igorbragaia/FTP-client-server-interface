@@ -143,7 +143,10 @@ class FTPServer(FTP):
                             message = self.make_message(path, base_path, self.status, text='')
                     # delete <dirname>
                     elif request.method == 'delete':
-                        dirname = request.data['dirname']
+                        filename = os.path.realpath(os.path.join(base_path, request.data['filename']))
+                        if os.path.isfile(filename):
+                            os.remove(filename)
+                            message = self.make_message(path, base_path, self.status, text='')
 
                 con.send(encode_message(message))
 
