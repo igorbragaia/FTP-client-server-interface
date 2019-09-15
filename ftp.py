@@ -34,3 +34,15 @@ def decode_message(encoded_message: bytes) -> Message:
 
 
 BYTES_LEN = 1024*1024  # 1MB
+HELP = 'help'
+CD = 'cd'
+LS = 'ls'
+PWD = 'pwd'
+MKDIR = 'mkdir'
+RMDIR = 'rmdir'
+GET = 'get'
+PUT = 'put'
+DELETE = 'delete'
+CLOSE = 'close'
+OPEN = 'open'
+QUIT = 'quit'

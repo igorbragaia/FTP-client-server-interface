@@ -1,4 +1,5 @@
-from ftp import FTP, Message, decode_message, encode_message, BYTES_LEN
+from ftp import FTP, Message, decode_message, encode_message, \
+    BYTES_LEN, CD, LS, PWD, MKDIR, RMDIR, GET, PUT, DELETE, CLOSE, OPEN, QUIT, HELP
 import socket
 import sys
 import base64
@@ -57,10 +58,10 @@ class FTPClient(FTP):
                 command = [el for el in msg.split(' ') if el != '']
 
                 invalid = False
-                if command[0] == 'help':
+                if command[0] == HELP:
                     with open('help.txt', 'r') as f:
                         print(f.read())
-                elif command[0] == 'open':
+                elif command[0] == OPEN:
                     if len(command) == 2:
                         _, e = self.connect(command[1])
                         if e:
@@ -74,9 +75,9 @@ class FTPClient(FTP):
                                 print(data['text'])
                     else:
                         invalid = True
-                elif command[0] == 'close':
+                elif command[0] == CLOSE:
                     print('NO OPENED SESSION')
-                elif command[0] == 'quit':
+                elif command[0] == QUIT:
                     sys.exit()
                 else:
                     invalid = True
@@ -96,70 +97,78 @@ class FTPClient(FTP):
                     msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
                     command = [el for el in msg.split(' ') if el != '']
 
-                    if command[0] == 'help':
+                    if command[0] == HELP:
                         if len(command) == 1:
-                            request = Message('help', {
+                            request = Message(HELP, {
                             })
-                    elif command[0] == 'cd':
+                    elif command[0] == CD:
                         if len(command) == 2:
-                            request = Message('cd', {
+                            request = Message(CD, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == 'ls':
+                    elif command[0] == LS:
                         if len(command) == 1:
-                            request = Message('ls', {
+                            request = Message(LS, {
                                 'dirname': ''
                             })
                         elif len(command) == 2:
-                            request = Message('ls', {
+                            request = Message(LS, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == 'mkdir':
+                    elif command[0] == PWD:
+                        if len(command) == 1:
+                            request = Message(PWD, {
+                            })
+                    elif command[0] == MKDIR:
                         if len(command) == 2:
-                            request = Message('mkdir', {
+                            request = Message(MKDIR, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == 'rmdir':
+                    elif command[0] == RMDIR:
                         if len(command) == 2:
-                            request = Message('rmdir', {
+                            request = Message(RMDIR, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == 'get':
+                    elif command[0] == GET:
                         if len(command) == 2:
-                            request = Message('get', {
+                            request = Message(GET, {
                                 'filename': command[1]
                             })
-                    elif command[0] == 'put':
+                    elif command[0] == PUT:
                         if len(command) == 2:
                             filepath = command[1]
                             if os.path.isfile(filepath):
                                 with open(filepath, 'rb') as file:
                                     encoded_file = base64.b64encode(file.read())
-                                    request = Message('put', {
+                                    request = Message(PUT, {
                                         'filename': filepath.split('/')[-1],
                                         'file': encoded_file
                                     })
-                    elif command[0] == 'delete':
+                            else:
+                                request = Message(PUT, {
+                                    'filename': '',
+                                    'file': ''
+                                })
+                    elif command[0] == DELETE:
                         if len(command) == 2:
-                            request = Message('delete', {
+                            request = Message(DELETE, {
                                 'filename': command[1]
                             })
-                    elif command[0] == 'close':
+                    elif command[0] == CLOSE:
                         self.close()
-                    elif command[0] == 'quit':
+                    elif command[0] == QUIT:
                         self.close()
                         sys.exit()
 
                 if self.tcp:
                     self.tcp.send(encode_message(request))
                     encoded_message = self.tcp.recv(BYTES_LEN)
-                    server_response = decode_message(encoded_message)
-                    data = server_response.data
+                    data = decode_message(encoded_message).data
                     dirname = data['path']
                     if data['text']:
                         print(data['text'])
                     if data['file'] != '':
-                        if request.method == 'get':
+                        if request.method == GET:
                             with open(os.path.join('files', data['filename']), "wb") as f:
                                 f.write(base64.b64decode(data['file']))
 
