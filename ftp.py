@@ -46,7 +46,7 @@ class FTP(ABC):
         con.send(encoded_message)
 
     @staticmethod
-    def recv(con: socket.socket):
+    def recv(con: socket.socket) -> Message or None:
         encoded_message = con.recv(BYTES_LEN)
         if not encoded_message:
             return None

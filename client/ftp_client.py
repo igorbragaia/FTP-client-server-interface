@@ -57,10 +57,10 @@ class FTPClient(FTP):
                 command = [el for el in msg.split(' ') if el != '']
 
                 invalid = False
-                if command[0] == HELP:
+                if len(command) and command[0] == HELP:
                     with open('help.txt', 'r') as f:
                         print(f.read())
-                elif command[0] == OPEN:
+                elif len(command) and command[0] == OPEN:
                     if len(command) == 2:
                         _, e = self.connect(command[1])
                         if e:
@@ -71,9 +71,9 @@ class FTPClient(FTP):
                                 print(response.data['text'])
                     else:
                         invalid = True
-                elif command[0] == CLOSE:
+                elif len(command) and command[0] == CLOSE:
                     print('NO OPENED SESSION')
-                elif command[0] == QUIT:
+                elif len(command) and command[0] == QUIT:
                     sys.exit()
                 else:
                     invalid = True
@@ -93,16 +93,16 @@ class FTPClient(FTP):
                     msg = input('{0}:{1}:{2}$ '.format(host, port, dirname))
                     command = [el for el in msg.split(' ') if el != '']
 
-                    if command[0] == HELP:
+                    if len(command) and command[0] == HELP:
                         if len(command) == 1:
                             request = Message(HELP, {
                             })
-                    elif command[0] == CD:
+                    elif len(command) and command[0] == CD:
                         if len(command) == 2:
                             request = Message(CD, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == LS:
+                    elif len(command) and command[0] == LS:
                         if len(command) == 1:
                             request = Message(LS, {
                                 'dirname': ''
@@ -111,26 +111,26 @@ class FTPClient(FTP):
                             request = Message(LS, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == PWD:
+                    elif len(command) and command[0] == PWD:
                         if len(command) == 1:
                             request = Message(PWD, {
                             })
-                    elif command[0] == MKDIR:
+                    elif len(command) and command[0] == MKDIR:
                         if len(command) == 2:
                             request = Message(MKDIR, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == RMDIR:
+                    elif len(command) and command[0] == RMDIR:
                         if len(command) == 2:
                             request = Message(RMDIR, {
                                 'dirname': command[1]
                             })
-                    elif command[0] == GET:
+                    elif len(command) and command[0] == GET:
                         if len(command) == 2:
                             request = Message(GET, {
                                 'filename': command[1]
                             })
-                    elif command[0] == PUT:
+                    elif len(command) and command[0] == PUT:
                         if len(command) == 2:
                             filepath = command[1]
                             if os.path.isfile(filepath):
@@ -145,14 +145,14 @@ class FTPClient(FTP):
                                     'filename': '',
                                     'file': ''
                                 })
-                    elif command[0] == DELETE:
+                    elif len(command) and command[0] == DELETE:
                         if len(command) == 2:
                             request = Message(DELETE, {
                                 'filename': command[1]
                             })
-                    elif command[0] == CLOSE:
+                    elif len(command) and command[0] == CLOSE:
                         self.close()
-                    elif command[0] == QUIT:
+                    elif len(command) and command[0] == QUIT:
                         self.close()
                         sys.exit()
 
