@@ -129,8 +129,8 @@ class FTPServer(FTP):
                 # ***********************
                 # get <dirname>
                 elif request.method == GET:
-                    filename_relpath = os.path.join('files', request.data['filename'])
-                    filename = os.path.realpath(os.path.join(base_path, request.data['filename']))
+                    filename = os.path.realpath(os.path.join(path, request.data['filename']))
+                    filename_relpath = os.path.join('files', os.path.relpath(filename, base_path))
                     if os.path.isfile(filename):
                         with open(filename_relpath, 'rb') as file:
                             encoded_file = base64.b64encode(file.read())
@@ -148,7 +148,7 @@ class FTPServer(FTP):
                         message = self.make_message(path, base_path, status, text='No such file or directory')
                 # delete <dirname>
                 elif request.method == DELETE:
-                    filename = os.path.realpath(os.path.join(base_path, request.data['filename']))
+                    filename = os.path.realpath(os.path.join(path, request.data['filename']))
                     if os.path.isfile(filename):
                         os.remove(filename)
                         message = self.make_message(path, base_path, status, text='')
