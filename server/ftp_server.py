@@ -1,5 +1,4 @@
-from ftp import FTP, Message, decode_message, encode_message, \
-    BYTES_LEN, CD, LS, PWD, MKDIR, RMDIR, GET, PUT, DELETE
+from ftp import FTP, Message,  CD, LS, PWD, MKDIR, RMDIR, GET, PUT, DELETE
 import socket
 import os
 import shutil
@@ -57,14 +56,13 @@ class FTPServer(FTP):
         status = 'NOT AUTHENTICATED'
 
         message = self.make_message(path, base_path, status, text='ENTER YOUR AUTH CODE')
-        con.send(encode_message(message))
+        super().send(con, message)
         while True:
-            msg = con.recv(BYTES_LEN)
-            if not msg:
+            request = super().recv(con)
+            if not request:
                 break
 
-            request = decode_message(msg)
-            print(client, msg)
+            print(client, request)
             message = self.make_message(path, base_path, status, text='Command not found')
             if status == 'NOT AUTHENTICATED':
                 if [request.data['username'], request.data['password']] in self.users:
@@ -157,7 +155,7 @@ class FTPServer(FTP):
                     else:
                         message = self.make_message(path, base_path, status, text='No such file or directory')
 
-            con.send(encode_message(message))
+            super().send(con, message)
 
         print('Finalizando conexao do cliente', client)
         con.close()

@@ -1,5 +1,4 @@
-from ftp import FTP, Message, decode_message, encode_message, \
-    BYTES_LEN, CD, LS, PWD, MKDIR, RMDIR, GET, PUT, DELETE, CLOSE, OPEN, QUIT, HELP
+from ftp import FTP, Message, CD, LS, PWD, MKDIR, RMDIR, GET, PUT, DELETE, CLOSE, OPEN, QUIT, HELP
 import socket
 import sys
 import base64
@@ -67,12 +66,9 @@ class FTPClient(FTP):
                         if e:
                             print(e)
                         else:
-                            encoded_message = self.tcp.recv(BYTES_LEN)
-                            decoded_message = decode_message(encoded_message)
-
-                            data = decoded_message.data
-                            if data['text']:
-                                print(data['text'])
+                            response = super().recv(self.tcp)
+                            if response.data['text']:
+                                print(response.data['text'])
                     else:
                         invalid = True
                 elif command[0] == CLOSE:
@@ -161,9 +157,9 @@ class FTPClient(FTP):
                         sys.exit()
 
                 if self.tcp:
-                    self.tcp.send(encode_message(request))
-                    encoded_message = self.tcp.recv(BYTES_LEN)
-                    data = decode_message(encoded_message).data
+                    super().send(self.tcp, request)
+                    response = super().recv(self.tcp)
+                    data = response.data
                     dirname = data['path']
                     if data['text']:
                         print(data['text'])
