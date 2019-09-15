@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import simplejson as json
+import socket
 
 BYTES_LEN = 1024*1024  # 1MB
 HELP = 'help'
@@ -40,12 +41,12 @@ class FTP(ABC):
         pass
 
     @staticmethod
-    def send(con, message: Message):
+    def send(con: socket.socket, message: Message):
         encoded_message = json.dumps(message.__dict__).encode('utf8')
         con.send(encoded_message)
 
     @staticmethod
-    def recv(con):
+    def recv(con: socket.socket):
         encoded_message = con.recv(BYTES_LEN)
         if not encoded_message:
             return None
