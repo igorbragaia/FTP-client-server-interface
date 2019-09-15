@@ -13,6 +13,9 @@ class FTPServer(FTP):
     def __init__(self):
         super().__init__()
         self.tcp = None
+        with open('users.txt', 'r') as f:
+            users = f.read()
+            self.users = [el.split(';') for el in users.split('\n')]
 
     @staticmethod
     def make_message(path: str, base_path: str, auth: str, text='', file='', filename=''):
@@ -23,7 +26,7 @@ class FTPServer(FTP):
             'filename': filename
         })
 
-    def connect(self, address='127.0.0.1:5000'):
+    def connect(self, address='127.0.0.1:2121'):
         try:
             host = address.split(':')[0]
             port = int(address.split(':')[1])
@@ -64,7 +67,7 @@ class FTPServer(FTP):
             print(client, msg)
             message = self.make_message(path, base_path, status, text='Command not found')
             if status == 'NOT AUTHENTICATED':
-                if request.data == {'username': 'igor', 'password': 'bragaia'}:
+                if [request.data['username'], request.data['password']] in self.users:
                     status = 'AUTHENTICATED'
                     message = self.make_message(path, base_path, status, text='LOGGED IN')
                 else:
